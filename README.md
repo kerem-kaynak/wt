@@ -6,7 +6,7 @@
 
 `wt feature-x` creates a worktree under `~/worktrees/<repo>/`, drops you into
 it, and runs your repo's setup script in the background: env files copied,
-dependencies installing. You (or the agent you're about to unleash) start on
+dependencies installing. You (or the agent you're about to work with) start on
 a branch that already works.
 
 ![demo](demo.gif)
