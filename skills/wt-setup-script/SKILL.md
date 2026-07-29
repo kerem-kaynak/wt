@@ -12,6 +12,21 @@ over local files git doesn't track, then install dependencies. stdout/stderr
 go to a log the user can follow with `wt log`; a non-zero exit is reported as
 a failed setup, so `set -e` is appropriate.
 
+## How wt finds the script
+
+`wt` runs the first of these that exists, so save the script accordingly:
+
+1. the path in the `WT_SETUP` environment variable, resolved relative to the
+   repo root (absolute paths work too)
+2. `.wt-setup.sh` at the repo root
+
+Default to `.wt-setup.sh` at the root. Use `WT_SETUP` (set in the user's
+shell rc, next to where they source wt) when the repo already has a setup
+script elsewhere, e.g. `export WT_SETUP=scripts/setup-worktree.sh`, or when
+the user wants the script outside the repo root. `WT_ROOT` (default
+`~/worktrees`) controls where worktrees are created and does not affect this
+script.
+
 ## Steps
 
 1. **Find the local files the app needs but git doesn't provide.** In the main
