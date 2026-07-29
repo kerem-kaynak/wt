@@ -1,5 +1,7 @@
 # wt
 
+[![CI](https://github.com/kerem-kaynak/wt/actions/workflows/ci.yml/badge.svg)](https://github.com/kerem-kaynak/wt/actions/workflows/ci.yml)
+
 **Git worktrees, ready for your agents. One shell function, no fluff.**
 
 `wt feature-x` creates a worktree under `~/worktrees/<repo>/`, drops you into
@@ -117,6 +119,53 @@ the worktree is gone.
 Worktrees are named after the branch with `/` flattened to `-`
 (`feat/login` becomes `~/worktrees/myrepo/feat-login`), PR checkouts as
 `pr-<n>`.
+
+## Contributing
+
+Bug fixes and small improvements welcome; open an issue first for anything
+bigger. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the tests and
+ShellCheck.
+
+## How it compares
+
+Good worktree managers exist; wt's niche is being the smallest one whose
+worktrees come up ready to work in. Against the tools you'd most likely
+evaluate instead:
+
+- **[gwq](https://github.com/d-kuro/gwq)** (Go) manages worktrees across all
+  your repos ghq-style, with a fuzzy finder, tmux integration, a status
+  dashboard, and `copy_files`/`setup_commands` hooks in TOML. As a binary it
+  can't move your shell: `gwq cd` opens a *new* shell by default, and
+  changing the current one means enabling its shell-integration layer.
+- **[phantom](https://github.com/aku11i/phantom)** (Node) covers post-create
+  file copying and commands via `phantom.config.json`, plus fzf, tmux, and
+  an MCP server so agents can drive it. You enter worktrees through a
+  subshell (`phantom shell`) rather than a `cd`.
+- **[wtp](https://github.com/satococoa/wtp)** (Go) is the closest in spirit:
+  `.wtp.yml` hooks copy `.env` files, symlink `node_modules`, and run
+  installs after create. Navigation works once you add
+  `eval "$(wtp shell-init zsh)"` to your rc.
+- **[Worktrunk](https://worktrunk.dev)** (Rust; also installs as `wt`) goes
+  much further: an agent per worktree, LLM commit messages, CI status in
+  `wt list`, a one-command squash-merge flow. A full workbench, with the
+  footprint of one.
+
+Two deliberate differences:
+
+- **wt is the shell integration, not a binary behind one.** A child process
+  can't `cd` its parent shell, which is why each tool above ships a wrapper
+  function, eval hook, or subshell on top of the binary. wt skips the
+  binary: it's ~100 sourced lines, so `wt feature-x` lands your actual
+  shell in the new worktree. And instead of a TOML/JSON/YAML schema,
+  configuration is two environment variables and one script.
+- **Setup never blocks your prompt.** gwq, phantom, and wtp run their
+  post-create hooks in the foreground: creation finishes when
+  `npm install` does. wt backgrounds the setup script, logs to
+  `<worktree>.setup.log`, and notifies you when it's done, so you (or your
+  agent) start working immediately. And because setup is a plain script
+  rather than config keys, it can do anything your repo needs. wt even
+  ships a [Claude Code skill](skills/wt-setup-script/SKILL.md) that
+  inspects your repo and writes the script for you.
 
 ## License
 
