@@ -15,6 +15,7 @@
 #
 # Source this file from your .zshrc or .bashrc. Works in zsh and bash.
 # Config: WT_ROOT (default ~/worktrees), WT_SETUP (default .wt-setup.sh).
+# shellcheck shell=bash
 
 wt() {
   # NB: never name a local "path" — zsh ties it to PATH, so localizing it
@@ -28,12 +29,13 @@ wt() {
       echo "usage: wt <new-branch> [base] | wt -b <branch> | wt -p <pr> | wt ls | wt cd <match> | wt log <match> | wt main | wt rm <match>" >&2
       return 1 ;;
     ls) git worktree list ;;
-    main) cd "$root" ;;
+    main) cd "$root" || return 1 ;;
     cd|log|rm)
+      if [ -z "$2" ]; then echo "usage: wt $1 <match>" >&2; return 1; fi
       dir=$(git worktree list --porcelain | awk '/^worktree /{sub(/^worktree /,""); print}' | grep -i -- "$2" | head -1)
       if [ -z "$dir" ]; then echo "wt: no worktree matching '$2'" >&2; return 1; fi
       case "$1" in
-        cd) cd "$dir" ;;
+        cd) cd "$dir" || return 1 ;;
         log)
           if [ ! -f "$dir.setup.log" ]; then echo "wt: no setup log for $dir" >&2; return 1; fi
           tail -n 40 -f "$dir.setup.log" ;;
@@ -45,7 +47,7 @@ wt() {
           branch=$(git -C "$dir" branch --show-current)
           # step out first if we're standing in the worktree being removed
           # (compare physical paths — git prints canonicalized ones)
-          case "$(pwd -P)/" in "$dir"/*) cd "$root" ;; esac
+          case "$(pwd -P)/" in "$dir"/*) cd "$root" || return 1 ;; esac
           # remove refuses on uncommitted changes, guarding the branch -D
           git worktree remove "$dir" &&
             { [ -z "$branch" ] || git branch -D "$branch"; } &&
@@ -83,6 +85,7 @@ wt() {
       fi
 
       log="$dir.setup.log"
+      # shellcheck disable=SC2016  # the runner is a template for `sh -c`; $1-$4 expand there
       runner='
         cd "$3" || exit 1
         "$4" "$1"
