@@ -13,7 +13,7 @@ a branch that already works.
 
 ## Why
 
-Worktrees are the right way to run parallel work: a branch per task, a branch
+Worktrees are the way to run parallel work: a branch per task, a branch
 per agent, no stashing, no waiting for `node_modules` to reshuffle. But raw
 git makes each one a chore:
 
