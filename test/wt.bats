@@ -79,6 +79,52 @@ touch setup-ran'
   [ -d "$WT_ROOT/repo/bare" ]
 }
 
+@test "bare wt prints the full command list" {
+  wt_run 'wt'
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"wt cd <match>"* ]]
+  [[ "$output" == *"wt rm <match>"* ]]
+  [[ "$output" == *"jump into a worktree"* ]]
+}
+
+@test "wt ls lists worktrees and hints how to jump in" {
+  wt_run 'wt feature >/dev/null 2>&1; wt main; wt ls'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"$WT_ROOT/repo/feature"* ]]
+  [[ "$output" == *"wt cd <match>"* ]]
+}
+
+@test "_wt_worktrees lists worktree names for completion" {
+  wt_run 'wt feature-x >/dev/null 2>&1; _wt_worktrees'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"feature-x"* ]]
+  [[ "$output" == *"repo"* ]] # the main checkout is a candidate too
+}
+
+@test "completion offers worktree names after wt cd" {
+  if [ "${WT_TEST_SHELL:-bash}" = zsh ]; then
+    # call the compsys function with compadd stubbed out
+    wt_run 'wt feature-x >/dev/null 2>&1; compadd() { printf "%s\n" "$@"; }
+            CURRENT=3; words=(wt cd feat); _wt'
+  else
+    wt_run 'wt feature-x >/dev/null 2>&1; COMP_WORDS=(wt cd feat) COMP_CWORD=2
+            _wt_complete; printf "%s\n" "${COMPREPLY[@]}"'
+  fi
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"feature-x"* ]]
+}
+
+@test "completion offers subcommands for the first word" {
+  if [ "${WT_TEST_SHELL:-bash}" = zsh ]; then
+    wt_run 'compadd() { printf "%s\n" "$@"; }; CURRENT=2; words=(wt ""); _wt'
+  else
+    wt_run 'COMP_WORDS=(wt "") COMP_CWORD=1; _wt_complete; printf "%s\n" "${COMPREPLY[@]}"'
+  fi
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cd"* ]]
+  [[ "$output" == *"rm"* ]]
+}
+
 @test "wt main returns to the main checkout" {
   wt_run 'wt feature >/dev/null 2>&1; wt main; pwd'
   [ "$status" -eq 0 ]

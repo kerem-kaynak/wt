@@ -112,6 +112,13 @@ wt log <match>           follow a worktree's setup log
 wt rm <match>            remove a worktree and delete its branch
 ```
 
+To hop into a worktree you saw in `wt ls`, use `wt cd` with any part of its
+name; `wt ls` reminds you of this after the listing. Tab completion comes
+along when you source wt: `wt <Tab>` offers the subcommands, and `wt cd`,
+`wt log`, and `wt rm` complete this repo's worktree names. In zsh, wt has to
+be sourced after `compinit` has run (oh-my-zsh and most plugin managers do
+that for you).
+
 `wt rm` is careful: it refuses while setup is still running, `git worktree
 remove` refuses on uncommitted changes, and the branch is only deleted after
 the worktree is gone.

@@ -14,6 +14,8 @@
 # local settings) and install dependencies.
 #
 # Source this file from your .zshrc or .bashrc. Works in zsh and bash.
+# Sourcing also registers tab completion: subcommands for the first word,
+# worktree names after cd/log/rm (zsh: compinit must have run first).
 # Config: WT_ROOT (default ~/worktrees), WT_SETUP (default .wt-setup.sh).
 # shellcheck shell=bash
 
@@ -21,14 +23,28 @@ wt() {
   # NB: never name a local "path" — zsh ties it to PATH, so localizing it
   # empties PATH inside the function.
   local wtroot root repo dir branch base start hook log runner
+  case "$1" in
+    ""|-h|--help)
+      cat >&2 <<'EOF'
+usage:
+  wt <new-branch> [base]   create a worktree on a new branch (base: origin's default)
+  wt -b <branch>           create a worktree for an existing branch
+  wt -p <n>                create a worktree for PR #n (needs the GitHub CLI)
+  wt ls                    list this repo's worktrees
+  wt cd <match>            jump into a worktree (substring match, tab-completes)
+  wt main                  jump back to the main checkout
+  wt log <match>           follow a worktree's setup log
+  wt rm <match>            remove a worktree and delete its branch
+EOF
+      return 1 ;;
+  esac
   wtroot="${WT_ROOT:-$HOME/worktrees}"
   root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")" || return 1
   repo="$(basename "$root")"
   case "$1" in
-    ""|-h|--help)
-      echo "usage: wt <new-branch> [base] | wt -b <branch> | wt -p <pr> | wt ls | wt cd <match> | wt log <match> | wt main | wt rm <match>" >&2
-      return 1 ;;
-    ls) git worktree list ;;
+    ls)
+      git worktree list
+      echo "wt: jump in with wt cd <match> (tab-completes)" >&2 ;;
     main) cd "$root" || return 1 ;;
     cd|log|rm)
       if [ -z "$2" ]; then echo "usage: wt $1 <match>" >&2; return 1; fi
@@ -107,3 +123,43 @@ wt() {
       ;;
   esac
 }
+
+# Completion candidates for wt cd/log/rm: this repo's worktree dir names.
+_wt_worktrees() {
+  git worktree list --porcelain 2>/dev/null |
+    awk '/^worktree /{sub(/.*\//,""); print}'
+}
+
+if [ -n "$ZSH_VERSION" ]; then
+  # CURRENT and words are set by zsh's completion system (1-based arrays)
+  # shellcheck disable=SC2154,SC2207
+  _wt() {
+    local -a names
+    if [ "$CURRENT" -eq 2 ]; then
+      compadd -- ls cd main log rm -b -p
+    elif [ "$CURRENT" -eq 3 ]; then
+      case "${words[2]}" in
+        cd|log|rm)
+          names=($(_wt_worktrees))
+          compadd -- "${names[@]}" ;;
+      esac
+    fi
+  }
+  # compdef appears once compinit has run; without it zsh has no completion
+  if command -v compdef >/dev/null 2>&1; then compdef _wt wt; fi
+elif [ -n "$BASH_VERSION" ]; then
+  _wt_complete() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    if [ "$COMP_CWORD" -eq 1 ]; then
+      # shellcheck disable=SC2207
+      COMPREPLY=($(compgen -W "ls cd main log rm -b -p" -- "$cur"))
+    elif [ "$COMP_CWORD" -eq 2 ]; then
+      case "${COMP_WORDS[1]}" in
+        cd|log|rm)
+          # shellcheck disable=SC2207
+          COMPREPLY=($(compgen -W "$(_wt_worktrees)" -- "$cur")) ;;
+      esac
+    fi
+  }
+  complete -F _wt_complete wt
+fi
