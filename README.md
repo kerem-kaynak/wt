@@ -1,6 +1,9 @@
 # wt
 
 [![CI](https://github.com/kerem-kaynak/wt/actions/workflows/ci.yml/badge.svg)](https://github.com/kerem-kaynak/wt/actions/workflows/ci.yml)
+[![pier](https://img.shields.io/badge/%E2%9A%93_pier-repo-007aff)](https://github.com/kerem-kaynak/pier)
+
+*[pier](https://github.com/kerem-kaynak/pier) gives every agent session its own VM on your AWS account.*
 
 **Git worktrees, ready for your agents. One shell function, no fluff.**
 
