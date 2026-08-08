@@ -1,4 +1,4 @@
-[![pier](https://img.shields.io/badge/%E2%9A%93_pier-repo-007aff)](https://github.com/kerem-kaynak/pier) *[pier](https://github.com/kerem-kaynak/pier) gives every agent session its own VM on your AWS account.*
+*for cloud alternative - [pier](https://github.com/kerem-kaynak/pier) gives every agent session its own VM on your AWS account.*
 
 # wt
 
